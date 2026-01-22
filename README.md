@@ -70,7 +70,7 @@ Pastikan Anda sudah menginstall:
 ### 1. Clone Repository
 
 ````bash
-git clone [https://github.com/Azura165/Azura-AI-Studio.git](https://github.com/Azura165/Azura-AI-Studio.git)
+git clone https://github.com/Azura165/Azura-AI-Studio.git
 cd Azura-AI-Studio
 2. Setup Backend (Python)
 Buka terminal baru, masuk ke folder backend:
@@ -132,17 +132,23 @@ Shadcn UI (Komponen Desain).
 📜 Lisensi
 Didistribusikan di bawah Lisensi MIT. Lihat file LICENSE untuk detail lebih lanjut.
 
-<div align="center"> <br /> <p><b>Suka project ini? Jangan lupa kasih bintang! ⭐</b></p> <a href="https://www.google.com/search?q=https://github.com/Azura165/Azura-AI-Studio/stargazers"> <img src="https://www.google.com/search?q=https://img.shields.io/github/stars/Azura165/Azura-AI-Studio%3Fstyle%3Dsocial" alt="GitHub stars"> </a> <br /> <br /> <p> Made with ❤️, ☕, and 🐍 by <b>Radithya Development (Azura)</b>. <br /> <i>Software Engineering Technology Student • Indonesia 🇮🇩</i> </p> </div>
+<br /> <div align="center"> <p><b>Suka project ini? Jangan lupa kasih bintang! ⭐</b></p>
+
+<a href="https://github.com/Azura165/Azura-AI-Studio"> <img src="https://img.shields.io/github/stars/Azura165/Azura-AI-Studio?style=social" alt="GitHub stars"> </a>
+
+<br /> <br />
+
+<p> Made with ❤️, ☕, and 🐍 by <b>Radithya Development (Azura)</b>. <br /> <i>Software Engineering Technology Student • Indonesia 🇮🇩</i> </p> </div>
 
 
 -----
 
-### Cara Update di GitHub (Terminal):
+### Cara Update (Lakukan ini di Terminal VS Code):
 
-Setelah kamu copy-paste kode di atas ke file `README.md` dan save, jalankan ini di terminal VS Code:
+Setelah kamu paste kode di atas dan **Save** file `README.md`, jalankan perintah ini di terminal untuk memperbarui tampilan di GitHub:
 
 ```bash
 git add README.md
-git commit -m "Docs: Final polish README layout & footer"
+git commit -m "Docs: Fix formatting and polish footer"
 git push origin main
 ````
