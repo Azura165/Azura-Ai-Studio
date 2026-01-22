@@ -1,112 +1,148 @@
-# Radit AI Studio 🎨✨
+<div align="center">
 
-**Next-Gen AI Tools for Creative Perfection.**
+# 💎 Azura AI Studio
 
-Platform web modern _all-in-one_ untuk kebutuhan kreatif digital. Menghapus background, menghilangkan objek foto, memperjelas gambar, dan download video sosial media menggunakan kecerdasan buatan (AI) & Python FastAPI.
+**Next-Gen AI Creative Suite for the Modern Web.**
 
-Dibuat dengan fokus pada **Kecepatan**, **Privasi**, dan **Kemudahan Penggunaan**.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-High_Performance-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-![Radit AI Banner](https://via.placeholder.com/1200x600.png?text=Radit+AI+Studio+v3.0)
+<br />
+<p align="center">
+  <b>Hapus Background • Magic Eraser • Video Downloader • AI Upscaler</b>
+  <br />
+  <i>Ditenagai oleh Python FastAPI (Asynchronous) & GPU Acceleration.</i>
+</p>
 
-## 🚀 Fitur Unggulan
-
-- **Magic Eraser 2.0**: Hapus orang, teks, atau objek mengganggu dari foto dengan teknologi _Inpainting_ (OpenCV & Telea).
-- **Background Remover**: Hapus latar belakang otomatis dalam 0.8 detik (Powered by U2Net & ONNX Runtime).
-- **Universal Video Downloader**: Unduh video dari YouTube, TikTok, IG, Twitter tanpa watermark (Support 4K & MP3).
-- **Smart Restorer**: Perbaiki foto buram/pecah menjadi tajam dan layak cetak (AI Upscaling).
-- **Privacy First**: Menggunakan sistem _Ephemeral Storage_. File otomatis dihapus permanen dari server setiap 30 menit.
-
-## 🛠️ Teknologi (Tech Stack)
-
-Project ini dibangun menggunakan arsitektur _Microservices_ modern:
-
-### **Frontend**
-
-- **Framework**: [Next.js 14](https://nextjs.org/) (App Router & Server Actions)
-- **Styling**: Tailwind CSS & Shadcn UI
-- **Animation**: Framer Motion
-- **Icons**: Lucide React
-
-### **Backend**
-
-- **Server**: [FastAPI](https://fastapi.tiangolo.com/) (Asynchronous Python)
-- **AI Engine**: Rembg (U2Net), OpenCV, NumPy
-- **Video Engine**: yt-dlp & FFmpeg
-- **Image Processing**: Pillow (PIL)
+</div>
 
 ---
 
-## 📦 Cara Install (Localhost)
+## 📖 Tentang Project
 
-Ikuti langkah berikut untuk menjalankan aplikasi di komputer Anda.
+**Azura AI Studio** adalah platform web _all-in-one_ yang menggabungkan kekuatan Artificial Intelligence dengan antarmuka web modern yang responsif. Project ini dibuat untuk mendemonstrasikan bagaimana **Next.js 14** (Frontend) dan **FastAPI** (Backend) dapat bekerja secara harmonis untuk memproses media berat secara _real-time_.
 
-### Prasyarat
+Fokus utama pengembangan: **Kecepatan (Performance)**, **Privasi (Privacy)**, dan **Kemudahan (UX)**.
 
-- **Node.js 18+** (Wajib)
-- **Python 3.10+** (Wajib)
-- **FFmpeg** (Wajib untuk Video Downloader)
-  - _Windows_: `winget install ffmpeg`
-  - _Linux_: `sudo apt install ffmpeg`
-  - _Mac_: `brew install ffmpeg`
+## ✨ Fitur Unggulan
 
-### 1. Setup Backend (Python)
+| Fitur                     | Deskripsi                                              | Teknologi                     |
+| :------------------------ | :----------------------------------------------------- | :---------------------------- |
+| 🪄 **Magic Eraser v2**    | Hapus objek, orang, atau teks mengganggu dari foto.    | `OpenCV` + `Inpainting Telea` |
+| 🎭 **Background Remover** | Hapus latar belakang foto HD dalam 0.8 detik.          | `Rembg` (U2Net) + `ONNX`      |
+| 🎬 **Universal Video DL** | Download video 4K dari YT, TikTok, IG tanpa watermark. | `yt-dlp` + `FFmpeg`           |
+| 🔍 **Smart Upscaler**     | Perjelas foto buram menjadi tajam (2x/4x Scale).       | `Pillow` + `Lanczos`          |
+| 🛡️ **Auto-Wipe Privacy**  | File otomatis dihapus dari server setiap 30 menit.     | `BackgroundTasks`             |
 
-Buka terminal dan arahkan ke folder `backend`:
+---
 
-```bash
+## 🛠️ Tech Stack (Teknologi)
+
+Project ini dibangun menggunakan arsitektur **Microservices** (Frontend & Backend terpisah):
+
+### **Frontend (Client-Side)**
+
+- **Framework:** Next.js 14 (App Router)
+- **UI Library:** Shadcn/ui + Tailwind CSS
+- **Animation:** Framer Motion
+- **State:** React Hooks + Server Actions
+
+### **Backend (Server-Side)**
+
+- **Core:** Python FastAPI (Async/Await)
+- **AI Engine:** PyTorch / ONNX Runtime
+- **Media Processing:** FFmpeg & OpenCV
+- **Task Queue:** Built-in Background Tasks
+
+---
+
+## 📦 Instalasi & Cara Pakai
+
+Pastikan Anda sudah menginstall:
+
+- [Node.js 18+](https://nodejs.org/)
+- [Python 3.10+](https://python.org/)
+- [FFmpeg](https://ffmpeg.org/) (Wajib untuk fitur video)
+
+### 1. Clone Repository
+
+````bash
+git clone [https://github.com/Azura165/Azura-AI-Studio.git](https://github.com/Azura165/Azura-AI-Studio.git)
+cd Azura-AI-Studio
+2. Setup Backend (Python)
+Buka terminal baru, masuk ke folder backend:
+
+Bash
 cd backend
 
-# 1. Buat Virtual Environment
+# Buat Virtual Environment
 python -m venv env
 
-# 2. Aktifkan Environment
-# Untuk Windows:
+# Aktifkan Environment
+# Windows:
 .\env\Scripts\activate
-# Untuk Mac/Linux:
+# Mac/Linux:
 source env/bin/activate
 
-# 3. Install Dependencies
+# Install Library
 pip install -r requirements.txt
 
-# 4. Jalankan Server FastAPI
+# Jalankan Server (Port 5000)
 uvicorn main:app --reload --port 5000
-Server backend akan berjalan di: http://localhost:5000 (Cek dokumentasi API di /docs)
+Server backend aktif di: http://localhost:5000
 
-2. Setup Frontend (Next.js)
-Buka terminal baru (biarkan terminal backend tetap jalan), lalu arahkan ke folder frontend:
+3. Setup Frontend (Next.js)
+Buka terminal baru lagi, masuk ke folder frontend:
 
 Bash
 cd frontend
 
-# 1. Install Dependencies
+# Install Library Node.js
 npm install
 
-# 2. Jalankan Mode Development
+# Jalankan Frontend (Port 3000)
 npm run dev
-Buka browser dan akses aplikasi di: http://localhost:3000
+Buka browser dan akses: http://localhost:3000
 
-🤝 Kontribusi & Donasi
-Project ini 100% Gratis & Open Source. Biaya operasional server GPU cukup tinggi. Jika alat ini membantu pekerjaan atau tugas Anda, dukungan sukarela sangat kami hargai!
+🤝 Berkontribusi
+Ingin menambahkan fitur baru? Kami sangat terbuka untuk kolaborasi!
 
-☕ Traktir Kopi: Saweria Radithya ⭐ Dukung Kode: Beri Bintang di GitHub Repo
+Fork repository ini.
 
-🛡️ Disclaimer
-Aplikasi ini tidak menyimpan data pengguna secara permanen. Semua file yang diunggah akan dihapus secara otomatis oleh sistem pembersih server dalam 30 menit.
+Buat branch fitur baru (git checkout -b fitur-keren).
 
-## 🌟 Acknowledgements (Kredit)
+Commit perubahan Anda (git commit -m 'Menambah fitur keren').
 
-Proyek ini tidak akan terwujud tanpa library open-source luar biasa berikut:
+Push ke branch (git push origin fitur-keren).
 
-- **AI Engine**: [Rembg](https://github.com/danielgatis/rembg) oleh Daniel Gatis (untuk Hapus Background).
-- **Video Engine**: [yt-dlp](https://github.com/yt-dlp/yt-dlp) (untuk Video Downloader).
-- **Image Processing**: [OpenCV](https://opencv.org/) & [Pillow](https://python-pillow.org/).
-- **Framework**: [FastAPI](https://fastapi.tiangolo.com/) & [Next.js](https://nextjs.org/).
+Buat Pull Request di GitHub.
 
----
+🌟 Acknowledgements (Kredit)
+Terima kasih kepada pengembang library open-source yang menjadi fondasi project ini:
 
-## 📜 License
+Rembg oleh Daniel Gatis (Core AI Remove BG).
 
-Didistribusikan di bawah Lisensi MIT. Lihat `LICENSE` untuk informasi lebih lanjut.
+yt-dlp (Engine Video Downloader).
 
-© 2026 Radithya Development. Dibuat dengan ❤️ dan ☕ di Indonesia.
-```
+Shadcn UI (Komponen Desain).
+
+📜 Lisensi
+Didistribusikan di bawah Lisensi MIT. Lihat file LICENSE untuk detail lebih lanjut.
+
+<div align="center"> <br /> <p><b>Suka project ini? Jangan lupa kasih bintang! ⭐</b></p> <a href="https://www.google.com/search?q=https://github.com/Azura165/Azura-AI-Studio/stargazers"> <img src="https://www.google.com/search?q=https://img.shields.io/github/stars/Azura165/Azura-AI-Studio%3Fstyle%3Dsocial" alt="GitHub stars"> </a> <br /> <br /> <p> Made with ❤️, ☕, and 🐍 by <b>Radithya Development (Azura)</b>. <br /> <i>Software Engineering Technology Student • Indonesia 🇮🇩</i> </p> </div>
+
+
+-----
+
+### Cara Update di GitHub (Terminal):
+
+Setelah kamu copy-paste kode di atas ke file `README.md` dan save, jalankan ini di terminal VS Code:
+
+```bash
+git add README.md
+git commit -m "Docs: Final polish README layout & footer"
+git push origin main
+````
