@@ -1,40 +1,18 @@
-# backend/nixpacks.toml
-
 [phases.setup]
-# UPDATE: Tambahkan paket X11 dan dependencies OpenCV
 aptPkgs = [
-    # Dependencies untuk OpenCV
     "libgl1",
-    "libgl1-mesa-glx",
     "libglib2.0-0",
     "libsm6",
     "libxext6",
     "libxrender1",
-    "libxcb1",
-    "libx11-6",
-    "libxinerama1",
-    "libxi6",
-    "libxtst6",
-    "libxrandr2",
-    "libfontconfig1",
-    "libfreetype6",
-    "libgthread-2.0-0",
-    # Video codecs (untuk cv2)
-    "libavcodec58",
-    "libavformat58",
-    "libswscale5",
-    "libtiff5",
-    "libjpeg8",
-    "libpng16-16",
-    "libopenexr25"
+    "ffmpeg"  # Untuk yt-dlp
 ]
 
 [phases.install]
 cmds = [
     "python -m venv .venv",
-    ". .venv/bin/activate && pip install -r requirements.txt",
-    # Pastikan opencv-python-headless terpasang dengan benar
-    ". .venv/bin/activate && pip install --force-reinstall opencv-python-headless==4.9.0.80"
+    ". .venv/bin/activate && pip install --upgrade pip",
+    ". .venv/bin/activate && pip install -r requirements.txt"
 ]
 
 [start]
