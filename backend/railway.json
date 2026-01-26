@@ -2,12 +2,12 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "echo 'Building with nixpacks...'"
+    "buildCommand": "echo 'Building with Nixpacks...'"
   },
   "deploy": {
-    "startCommand": "uvicorn main:app --host 0.0.0.0 --port $PORT --loop asyncio --timeout-keep-alive 120",
+    "startCommand": ". .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port $PORT --loop asyncio --timeout-keep-alive 120",
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 5,
+    "restartPolicyMaxRetries": 10,
     "healthcheckPath": "/health",
     "healthcheckTimeout": 30
   }
