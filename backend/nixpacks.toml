@@ -1,6 +1,8 @@
-# Konfigurasi Sistem Railway (Linux)
+# backend/nixpacks.toml
+
 [phases.setup]
-nixPkgs = ["python310", "ffmpeg", "glib", "libGL", "xorg.libxcb"]
+# Kita install library sistem Linux yang dibutuhkan OpenCV
+nixPkgs = ["python310", "ffmpeg", "glib", "libGL", "xorg.libxcb", "xorg.libX11"]
 
 [phases.install]
 cmds = ["python -m venv .venv", ". .venv/bin/activate && pip install -r requirements.txt"]
