@@ -22,6 +22,10 @@ from pydantic import BaseModel
 from rembg import remove, new_session
 from PIL import Image, ImageEnhance, ImageOps, ImageFilter
 
+# --- CONFIGURATION & LOGGING ---
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 # --- IMPORT OPTIONAL: cv2 (OpenCV) ---
 # Railway mungkin tidak support penuh OpenCV, jadi kita buat optional
 # Dengan fallback ke PIL jika cv2 tidak tersedia
@@ -34,15 +38,12 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ OpenCV tidak tersedia: {e}. Beberapa fitur akan menggunakan PIL sebagai fallback")
 
-# --- CONFIGURATION & LOGGING ---
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-# Folder Config
+# --- Folder Config dan kode selanjutnya tetap sama ---
 UPLOAD_FOLDER = 'uploads'
 OUTPUT_FOLDER = 'outputs'
 MODELS_FOLDER = 'models'
 
+# ... kode selanjutnya tetap sama ...
 # LIMITS (Penting untuk Railway Free Tier)
 SERVER_MAX_DIMENSION = 1024  # Lebih rendah lagi untuk Railway Free Tier (512MB RAM)
 MAX_VIDEO_SIZE_MB = 100      # Batas max download video (100MB)
