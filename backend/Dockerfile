@@ -1,48 +1,40 @@
 # backend/Dockerfile
-FROM python:3.10-slim-bullseye
+FROM python:3.10-slim
 
-# Install system dependencies untuk Debian 11 (Bullseye)
+# Install dependencies
 RUN apt-get update && apt-get install -y \
-    libgl1 \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender1 \
-    libxcb1 \
-    libx11-6 \
-    libfontconfig1 \
-    libfreetype6 \
     ffmpeg \
-    libavcodec-extra \
-    libpng16-16 \
-    libjpeg62-turbo \
-    libtiff5 \
-    wget \
-    curl \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy requirements first for better caching
+# Copy requirements
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Install Python packages
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy app
 COPY . .
 
-# Create necessary directories
+# Create directories
 RUN mkdir -p uploads outputs models
 
-# Set environment variables
+# Set permissions
+RUN chmod +x /app/main.py
+
+# Environment
 ENV PORT=5000
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
 
 # Expose port
 EXPOSE $PORT
 
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000", "--loop", "asyncio", "--timeout-keep-alive", "120"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health').read()" || exit 1
+
+# Run app - STRING FORMAT (bukan array)
+CMD uvicorn main:app --host 0.0.0.0 --port $PORT --loop asyncio --timeout-keep-alive 120
