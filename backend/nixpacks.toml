@@ -1,19 +1,43 @@
+# backend/nixpacks.toml
+
 [phases.setup]
+# FIX: Typo - ubah 'libgli' ke 'libgl1'
 aptPkgs = [
+    # Dependencies untuk OpenCV
     "libgl1",
+    "libgl1-mesa-glx",
     "libglib2.0-0",
     "libsm6",
     "libxext6",
     "libxrender1",
-    "ffmpeg"  # Untuk yt-dlp
+    # Video/audio codecs untuk yt-dlp dan cv2
+    "ffmpeg",
+    "libavcodec-extra",
+    # System dependencies umum
+    "libpng16-16",
+    "libjpeg62-turbo",
+    "libtiff5",
+    # Minimal X11 untuk OpenCV headless
+    "libxcb1",
+    "libx11-6"
 ]
 
 [phases.install]
 cmds = [
     "python -m venv .venv",
     ". .venv/bin/activate && pip install --upgrade pip",
-    ". .venv/bin/activate && pip install -r requirements.txt"
+    ". .venv/bin/activate && pip install -r requirements.txt",
+    # Pastikan OpenCV headless terinstall dengan benar
+    ". .venv/bin/activate && pip uninstall -y opencv-python opencv-contrib-python || true",
+    ". .venv/bin/activate && pip install --force-reinstall opencv-python-headless==4.9.0.80"
+]
+
+[phases.cleanup]
+cmds = [
+    "apt-get clean",
+    "rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
 ]
 
 [start]
-cmd = ". .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port $PORT"
+# Sesuai dengan perintah di Railway settings
+cmd = ". .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port $PORT --loop asyncio --timeout-keep-alive 120"
