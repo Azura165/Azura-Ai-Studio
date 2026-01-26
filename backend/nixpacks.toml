@@ -1,26 +1,40 @@
 # backend/nixpacks.toml
 
 [phases.setup]
-# UPDATE: Menambahkan 'libgl1' untuk mengatasi error libGL.so.1
+# UPDATE: Tambahkan paket X11 dan dependencies OpenCV
 aptPkgs = [
+    # Dependencies untuk OpenCV
     "libgl1",
     "libgl1-mesa-glx",
     "libglib2.0-0",
     "libsm6",
     "libxext6",
-    "libxrender1"
+    "libxrender1",
+    "libxcb1",
+    "libx11-6",
+    "libxinerama1",
+    "libxi6",
+    "libxtst6",
+    "libxrandr2",
+    "libfontconfig1",
+    "libfreetype6",
+    "libgthread-2.0-0",
+    # Video codecs (untuk cv2)
+    "libavcodec58",
+    "libavformat58",
+    "libswscale5",
+    "libtiff5",
+    "libjpeg8",
+    "libpng16-16",
+    "libopenexr25"
 ]
 
 [phases.install]
-# UPDATE: Strategi "Bersih-bersih"
-# 1. Install semua requirements
-# 2. Paksa UNINSTALL opencv-python (versi monitor) yang bikin crash
-# 3. Pastikan opencv-python-headless (versi server) terpasang
 cmds = [
     "python -m venv .venv",
     ". .venv/bin/activate && pip install -r requirements.txt",
-    ". .venv/bin/activate && pip uninstall -y opencv-python || true",
-    ". .venv/bin/activate && pip install opencv-python-headless==4.9.0.80"
+    # Pastikan opencv-python-headless terpasang dengan benar
+    ". .venv/bin/activate && pip install --force-reinstall opencv-python-headless==4.9.0.80"
 ]
 
 [start]
