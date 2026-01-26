@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { UploadArea } from "./upload-area";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Eraser,
   Download,
@@ -12,7 +12,6 @@ import {
   ZoomOut,
   Eye,
   Maximize,
-  ImagePlus,
   Loader2,
   Trash2,
   Zap,
@@ -32,6 +31,34 @@ const LOADING_TIPS = [
   "Tip: Klik ganda untuk fit-to-screen.",
   "Tip: Gunakan mode 'Move' untuk geser gambar saat di-zoom.",
 ];
+
+// --- OPTIMASI 1: IMAGE COMPRESSOR ---
+// Mengecilkan gambar HD di browser sebelum dikirim ke server
+// Mengurangi beban upload hingga 80% (Anti-Lag)
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const MAX_WIDTH = 1500; // Batas aman untuk server gratisan
+      const scaleSize = MAX_WIDTH / img.width;
+
+      // Hanya resize jika gambar terlalu besar
+      if (scaleSize < 1) {
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+      } else {
+        canvas.width = img.width;
+        canvas.height = img.height;
+      }
+
+      const ctx = canvas.getContext("2d");
+      ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", 0.85)); // Convert ke JPG 85% Quality
+    };
+  });
+};
 
 export function MagicEraserTab() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
@@ -53,7 +80,6 @@ export function MagicEraserTab() {
   const [imageDims, setImageDims] = useState({ w: 0, h: 0 });
   const [showBrushPreview, setShowBrushPreview] = useState(false);
 
-  // Refs for Direct Manipulation
   const positionRef = useRef({ x: 0, y: 0 });
   const dragStartRef = useRef({ x: 0, y: 0 });
   const isDraggingRef = useRef(false);
@@ -64,7 +90,6 @@ export function MagicEraserTab() {
   const contentRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
-  // --- UPDATE TRANSFORM (Direct DOM for Performance) ---
   const updateTransform = () => {
     if (contentRef.current) {
       const { x, y } = positionRef.current;
@@ -76,14 +101,34 @@ export function MagicEraserTab() {
     updateTransform();
   }, [scale]);
 
-  const handleFile = (files: File[]) => {
+  const handleFile = async (files: File[]) => {
     if (files.length > 0) {
-      const url = URL.createObjectURL(files[0]);
-      setImageSrc(url);
-      setResultSrc(null);
-      setScale(1);
-      positionRef.current = { x: 0, y: 0 };
-      setActiveTool("brush");
+      const file = files[0];
+
+      // --- KEAMANAN 1: Validasi Tipe File ---
+      if (!file.type.startsWith("image/")) {
+        toast.error("Format file tidak didukung! Gunakan JPG/PNG.");
+        return;
+      }
+
+      // --- KEAMANAN 2: Batas Ukuran Awal (10MB) ---
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Ukuran file terlalu besar (Max 10MB)");
+        return;
+      }
+
+      const toastId = toast.loading("Mengoptimalkan gambar...");
+      try {
+        const compressedUrl = await compressImage(file);
+        setImageSrc(compressedUrl);
+        setResultSrc(null);
+        setScale(1);
+        positionRef.current = { x: 0, y: 0 };
+        setActiveTool("brush");
+        toast.dismiss(toastId);
+      } catch (e) {
+        toast.error("Gagal memuat gambar", { id: toastId });
+      }
     }
   };
 
@@ -93,12 +138,11 @@ export function MagicEraserTab() {
     const padding = 20;
     const scaleX = (container.width - padding) / imageDims.w;
     const scaleY = (container.height - padding) / imageDims.h;
-    setScale(Math.min(scaleX, scaleY, 1)); // Max scale 1 (biar ga pecah di awal)
+    setScale(Math.min(scaleX, scaleY, 1));
     positionRef.current = { x: 0, y: 0 };
     updateTransform();
   };
 
-  // INIT CANVAS
   useEffect(() => {
     if (imageSrc && canvasRef.current && !resultSrc) {
       const img = new Image();
@@ -120,7 +164,7 @@ export function MagicEraserTab() {
     }
   }, [imageSrc, resultSrc]);
 
-  // DRAWING LOGIC
+  // DRAWING LOGIC (Sama seperti sebelumnya)
   const getCoordinates = (e: React.PointerEvent) => {
     if (!canvasRef.current || !containerRef.current) return { x: 0, y: 0 };
     const rect = containerRef.current.getBoundingClientRect();
@@ -162,7 +206,7 @@ export function MagicEraserTab() {
         ctx.strokeStyle = "rgba(0,0,0,1)";
       } else {
         ctx.globalCompositeOperation = "source-over";
-        ctx.strokeStyle = `rgba(255, 50, 50, 0.6)`; // Warna mask merah transparan
+        ctx.strokeStyle = `rgba(255, 50, 50, 0.6)`;
       }
       ctx.stroke();
     }
@@ -185,7 +229,6 @@ export function MagicEraserTab() {
     }
   };
 
-  // --- TOUCH & PANNING LOGIC ---
   const handlePointerDown = (e: React.PointerEvent) => {
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
@@ -221,7 +264,7 @@ export function MagicEraserTab() {
     stopDrawing();
   };
 
-  // PROCESS
+  // --- OPTIMASI 2: PROCESS REQUEST ---
   const processEraser = async () => {
     if (!imageSrc || !canvasRef.current) return;
     setIsProcessing(true);
@@ -229,34 +272,31 @@ export function MagicEraserTab() {
       LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)],
     );
 
+    // URL API Dinamis (Siap Deploy)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000";
+
     try {
-      const imgBlob = await fetch(imageSrc).then((r) => r.blob());
-      const reader = new FileReader();
-      reader.readAsDataURL(imgBlob);
+      // ImageSrc sudah compressed, jadi aman langsung dikirim
+      const base64Mask = canvasRef.current?.toDataURL("image/png");
 
-      reader.onloadend = async () => {
-        const base64Image = reader.result;
-        const base64Mask = canvasRef.current?.toDataURL("image/png");
+      const res = await fetch(`${apiUrl}/api/erase-object`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: imageSrc, // Kirim gambar yg sudah di-resize
+          mask: base64Mask,
+          quality,
+          strength: eraserStrength,
+          detail: detailLevel,
+        }),
+      });
 
-        const res = await fetch("http://127.0.0.1:5000/api/erase-object", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            image: base64Image,
-            mask: base64Mask,
-            quality,
-            strength: eraserStrength,
-            detail: detailLevel,
-          }),
-        });
-
-        if (!res.ok) throw new Error("Server error");
-        const data = await res.json();
-        setResultSrc(data.url);
-        toast.success("Berhasil dihapus!", { icon: "✨" });
-      };
+      if (!res.ok) throw new Error("Server error");
+      const data = await res.json();
+      setResultSrc(data.url);
+      toast.success("Berhasil dihapus!", { icon: "✨" });
     } catch (e) {
-      toast.error("Gagal memproses.");
+      toast.error("Gagal memproses. Coba lagi.");
     } finally {
       setIsProcessing(false);
     }
@@ -295,17 +335,16 @@ export function MagicEraserTab() {
           <UploadArea onFilesSelected={handleFile} multiple={false} />
           <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
-              <Sparkles className="size-3 text-indigo-500" /> Supports
-              PNG/JPG/WEBP
+              <Sparkles className="size-3 text-indigo-500" /> Auto-Resize (Max
+              1500px)
             </span>
           </div>
         </motion.div>
       ) : (
         <div className="w-full max-w-4xl flex flex-col gap-4">
-          {/* --- TOP TOOLBAR (FLOATING) --- */}
+          {/* --- TOP TOOLBAR --- */}
           <div className="flex flex-wrap justify-between items-center bg-card border rounded-2xl p-2 shadow-sm gap-2 sticky top-20 z-30">
             <div className="flex items-center gap-1">
-              {/* Tool Switcher */}
               <div className="flex bg-muted/50 p-1 rounded-xl border">
                 <button
                   onClick={() => setActiveTool("brush")}
@@ -394,7 +433,7 @@ export function MagicEraserTab() {
             </div>
           </div>
 
-          {/* --- MAIN CANVAS VIEWPORT (RESIZABLE) --- */}
+          {/* --- MAIN CANVAS VIEWPORT --- */}
           <div
             ref={containerRef}
             className="relative w-full rounded-2xl overflow-hidden border-2 border-indigo-500/10 bg-black/5 shadow-inner touch-none cursor-crosshair h-[60vh] md:h-[65vh]"
@@ -403,17 +442,14 @@ export function MagicEraserTab() {
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
           >
-            {/* Background Texture */}
             <div className="absolute inset-0 opacity-10 bg-[url('https://transparenttextures.com/patterns/stardust.png')]" />
 
-            {/* TRANSFORM CONTENT LAYER */}
             <div
               ref={contentRef}
-              className="w-full h-full flex items-center justify-center origin-center will-change-transform" // Optimasi GPU
+              className="w-full h-full flex items-center justify-center origin-center will-change-transform"
               style={{ transform: `translate(0px, 0px) scale(1)` }}
             >
               <div className="relative shadow-2xl">
-                {/* 1. Base Image */}
                 <img
                   src={isComparing ? imageSrc : resultSrc || imageSrc}
                   alt="Work"
@@ -421,7 +457,6 @@ export function MagicEraserTab() {
                   style={{ width: imageDims.w, height: imageDims.h }}
                 />
 
-                {/* 2. Grid Overlay */}
                 {showGrid && (
                   <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none z-20">
                     {[...Array(9)].map((_, i) => (
@@ -430,7 +465,6 @@ export function MagicEraserTab() {
                   </div>
                 )}
 
-                {/* 3. Masking Canvas */}
                 {!resultSrc && !isComparing && (
                   <canvas
                     ref={canvasRef}
@@ -438,7 +472,6 @@ export function MagicEraserTab() {
                   />
                 )}
 
-                {/* 4. Brush Preview Cursor */}
                 {showBrushPreview && !resultSrc && activeTool === "brush" && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
                     <div
@@ -450,7 +483,6 @@ export function MagicEraserTab() {
               </div>
             </div>
 
-            {/* Floating Zoom Controls (Inside Canvas) */}
             <div className="absolute top-4 right-4 flex flex-col gap-2 z-30 pointer-events-auto">
               <div className="flex flex-col bg-black/50 backdrop-blur-md rounded-xl border border-white/10 shadow-lg p-1">
                 <Button
@@ -476,7 +508,6 @@ export function MagicEraserTab() {
               </div>
             </div>
 
-            {/* Processing Overlay */}
             {isProcessing && (
               <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-50 flex flex-col items-center justify-center text-white p-4 text-center animate-in fade-in">
                 <Loader2 className="size-12 animate-spin mb-4 text-indigo-500" />
@@ -490,13 +521,10 @@ export function MagicEraserTab() {
             )}
           </div>
 
-          {/* --- BOTTOM CONTROLS (STATIC FLOW) --- */}
-          {/* Ini sekarang di luar canvas, jadi ikut flow halaman normal */}
           <div className="w-full">
             {!resultSrc ? (
               <div className="bg-card border p-4 rounded-2xl shadow-sm flex flex-col gap-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                  {/* Slider Brush */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs font-medium text-muted-foreground">
                       <span className="flex items-center gap-2">
@@ -518,7 +546,6 @@ export function MagicEraserTab() {
                     />
                   </div>
 
-                  {/* Slider Power */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs font-medium text-muted-foreground">
                       <span className="flex items-center gap-2">
@@ -539,7 +566,6 @@ export function MagicEraserTab() {
                     />
                   </div>
 
-                  {/* Slider Detail (Full Width) */}
                   <div className="space-y-2 md:col-span-2">
                     <div className="flex justify-between text-xs font-medium text-muted-foreground">
                       <span className="flex items-center gap-2">
@@ -561,7 +587,6 @@ export function MagicEraserTab() {
 
                 <div className="h-px bg-border"></div>
 
-                {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex bg-muted rounded-lg p-1 shrink-0 self-start sm:self-auto">
                     {["HD", "MED"].map((q) => (
@@ -589,7 +614,6 @@ export function MagicEraserTab() {
                 </div>
               </div>
             ) : (
-              // RESULT ACTIONS
               <div className="bg-card border p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-3 animate-in slide-in-from-bottom-4">
                 <Button
                   variant="outline"

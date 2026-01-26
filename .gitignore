@@ -1,7 +1,9 @@
-# --- SECURITY & SECRETS ---
+# --- SECURITY & SECRETS (JANGAN PERNAH DIHAPUS) ---
 .env
 .env.local
-.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
 *.pem
 *.key
 
@@ -29,6 +31,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # --- NODE.JS (Frontend) ---
 node_modules/
@@ -38,9 +41,11 @@ yarn-error.log*
 .pnpm-debug.log*
 .next/
 out/
+build/
+dist/
 
-# --- USER DATA & MEDIA (SANGAT PENTING: JANGAN DIHAPUS) ---
-# Mencegah upload foto/video user ke GitHub
+# --- USER DATA & MEDIA (PRIVACY PROTECTION) ---
+# Mencegah upload foto/video user ke GitHub agar repo tetap bersih
 backend/uploads/
 backend/outputs/
 backend/models/
@@ -48,7 +53,7 @@ uploads/
 outputs/
 models/
 
-# Images
+# Images & Assets (Kecuali yang ada di folder public/)
 *.jpg
 *.jpeg
 *.png
@@ -56,7 +61,7 @@ models/
 *.svg
 *.gif
 
-# Videos & Audio (Tambahan untuk Video Downloader)
+# Videos & Audio (Mencegah file besar ter-upload)
 *.mp4
 *.mkv
 *.webm
@@ -65,8 +70,14 @@ models/
 *.wav
 *.m4a
 
-# --- OS / IDE ---
+# --- IDE & OS ---
 .DS_Store
 .vscode/
 .idea/
 Thumbs.db
+*.swp
+*.swo
+
+# --- VERCEL & RAILWAY ---
+.vercel/
+.railway/

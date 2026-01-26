@@ -20,6 +20,8 @@ import {
   Scaling,
   FlipHorizontal,
   ChevronUp,
+  Ban,
+  AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
 import { UploadArea } from "./upload-area";
@@ -29,6 +31,8 @@ import { HexColorPicker } from "react-colorful";
 
 // --- SECURITY & CONFIG ---
 const MAX_FILES_LIMIT = 50;
+const MAX_FILE_SIZE_MB = 10; // Batas per file
+const COMPRESSION_MAX_WIDTH = 1500; // Resize ke 1500px sebelum upload (Aman untuk server)
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
 // --- TYPES ---
@@ -59,7 +63,7 @@ const PRESET_COLORS = [
   { name: "Green", value: "#22c55e", class: "bg-green-500" },
 ];
 
-// Sanitasi nama file (Security)
+// --- UTILS ---
 const cleanFileName = (filename: string) => {
   return filename.replace(/[^a-z0-9.]/gi, "_").replace(/_{2,}/g, "_");
 };
@@ -67,7 +71,43 @@ const cleanFileName = (filename: string) => {
 const changeExtension = (filename: string, newExt: string) =>
   filename.replace(/\.[^/.]+$/, "") + newExt;
 
-// --- CANVAS HELPER (Optimized) ---
+// --- OPTIMIZATION: CLIENT-SIDE COMPRESSOR ---
+const compressImage = (file: File): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    const url = URL.createObjectURL(file);
+    img.src = url;
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+
+      // Resize logic (Maintain Aspect Ratio)
+      if (width > COMPRESSION_MAX_WIDTH) {
+        height = Math.round((height * COMPRESSION_MAX_WIDTH) / width);
+        width = COMPRESSION_MAX_WIDTH;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx?.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Compression failed"));
+        },
+        "image/jpeg",
+        0.85,
+      ); // 85% Quality JPEG (Cukup untuk Web)
+    };
+    img.onerror = reject;
+  });
+};
+
+// --- CANVAS HELPER ---
 const downloadCompositeImage = async (
   fgUrl: string,
   bgUrl: string | null,
@@ -193,7 +233,7 @@ const downloadCompositeImage = async (
   });
 };
 
-// --- FILE CARD (MEMOIZED & OPTIMIZED) ---
+// --- FILE CARD (MEMOIZED) ---
 const FileCard = memo(
   ({
     item,
@@ -265,12 +305,18 @@ const FileCard = memo(
           isSelected
             ? "border-indigo-500 ring-2 ring-indigo-500/20 shadow-lg z-10"
             : "border-border hover:border-indigo-300",
-          item.status === "error" && "border-destructive/50",
+          item.status === "error" && "border-destructive/50 bg-destructive/5",
         )}
       >
         {item.status === "uploading" && (
           <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] z-20 flex items-center justify-center">
             <Loader2 className="size-8 text-white animate-spin drop-shadow-md" />
+          </div>
+        )}
+
+        {item.status === "error" && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+            <Ban className="size-8 text-destructive/50" />
           </div>
         )}
 
@@ -380,6 +426,7 @@ FileCard.displayName = "FileCard";
 export function MultipleImagesTab() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [shouldStop, setShouldStop] = useState(false); // New: Control Flag
   const [loadingText, setLoadingText] = useState("Ready");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -390,6 +437,7 @@ export function MultipleImagesTab() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const colorDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Clean up memory
   useEffect(() => {
     return () =>
       files.forEach((f) => {
@@ -403,10 +451,18 @@ export function MultipleImagesTab() {
       toast.error(`Limit ${MAX_FILES_LIMIT} files max.`);
       return;
     }
-    // Security Check: Validate MIME type
-    const validFiles = newFiles.filter((f) => ALLOWED_TYPES.includes(f.type));
+
+    // Security: Filter Types & Size
+    const validFiles = newFiles.filter((f) => {
+      const isValidType = ALLOWED_TYPES.includes(f.type);
+      const isValidSize = f.size <= MAX_FILE_SIZE_MB * 1024 * 1024;
+      return isValidType && isValidSize;
+    });
+
     if (validFiles.length < newFiles.length) {
-      toast.warning("Beberapa file bukan gambar dan dilewati.");
+      toast.warning(
+        `Beberapa file ditolak (Bukan gambar / >${MAX_FILE_SIZE_MB}MB)`,
+      );
     }
 
     const newItems: FileItem[] = validFiles.map((file) => ({
@@ -423,7 +479,7 @@ export function MultipleImagesTab() {
 
     setFiles((prev) => [...prev, ...newItems]);
     if (newItems.length > 0) setSelectedId(newItems[0].id);
-    toast.info(`${newItems.length} images added`);
+    toast.info(`${newItems.length} images added to queue`);
   }, []);
 
   const handleSelect = useCallback(
@@ -503,12 +559,23 @@ export function MultipleImagesTab() {
     toast.success("Applied to all");
   };
 
+  // --- CORE PROCESS LOGIC (OPTIMIZED) ---
   const processAllImages = async () => {
     setIsProcessing(true);
+    setShouldStop(false);
     const queue = files.filter((f) => f.status === "idle");
     let successCount = 0;
 
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000";
+
     for (let i = 0; i < queue.length; i++) {
+      // Check Stop Flag
+      if (shouldStop) {
+        setIsProcessing(false);
+        toast.info("Proses dihentikan oleh user");
+        break;
+      }
+
       const item = queue[i];
       setLoadingText(`Processing ${i + 1}/${queue.length}...`);
 
@@ -517,16 +584,23 @@ export function MultipleImagesTab() {
       );
 
       try {
-        const formData = new FormData();
-        formData.append("file", item.file);
-        formData.append("quality", "HD");
+        // 1. JIT Compression (Compress ONLY when needed)
+        // Ini kunci agar browser tidak hang saat proses banyak file
+        const compressedBlob = await compressImage(item.file);
 
-        const res = await fetch("http://127.0.0.1:5000/api/remove-bg", {
+        const formData = new FormData();
+        formData.append("file", compressedBlob, item.originalName);
+        formData.append("quality", "HD"); // Minta hasil HD dari server
+
+        // 2. Upload
+        const res = await fetch(`${apiUrl}/api/remove-bg`, {
           method: "POST",
           body: formData,
         });
+
         if (!res.ok) throw new Error("Failed");
         const data = await res.json();
+
         setFiles((prev) =>
           prev.map((f) =>
             f.id === item.id
@@ -535,15 +609,19 @@ export function MultipleImagesTab() {
           ),
         );
         successCount++;
-        await new Promise((r) => setTimeout(r, 200));
+
+        // 3. Small Delay to breathe
+        await new Promise((r) => setTimeout(r, 100));
       } catch (error) {
         setFiles((prev) =>
           prev.map((f) => (f.id === item.id ? { ...f, status: "error" } : f)),
         );
       }
     }
+
     setIsProcessing(false);
-    toast.success(`Done! ${successCount} images processed.`);
+    if (successCount > 0)
+      toast.success(`Selesai! ${successCount} gambar berhasil diproses.`);
   };
 
   const handleDownloadAll = async () => {
@@ -575,6 +653,12 @@ export function MultipleImagesTab() {
     setSelectedId(null);
     toast.info("Cleared");
   };
+
+  const handleStop = () => {
+    setShouldStop(true);
+    toast.warning("Menghentikan antrian...");
+  };
+
   const hasFiles = files.length > 0;
   const isAllDone =
     hasFiles &&
@@ -585,7 +669,6 @@ export function MultipleImagesTab() {
 
   return (
     <div className="space-y-6 pb-4 relative">
-      {/* BACKDROP UNTUK MENUTUP POPUP (FULL SCREEN Z-40) */}
       {showColorPicker && (
         <div
           className="fixed inset-0 z-40 bg-transparent"
@@ -609,7 +692,7 @@ export function MultipleImagesTab() {
             <Loader2 className="size-5 animate-spin text-indigo-600" />
             <div className="flex-1 space-y-1">
               <div className="flex justify-between text-sm font-medium">
-                <span>Processing...</span>
+                <span>Processing Queue...</span>
                 <span>{loadingText}</span>
               </div>
               <Progress
@@ -621,18 +704,27 @@ export function MultipleImagesTab() {
                 className="h-2"
               />
             </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleStop}
+              className="h-8 text-xs"
+            >
+              Stop
+            </Button>
           </div>
         </motion.div>
       )}
 
+      {/* TOOLBAR (Sama seperti sebelumnya, disederhanakan untuk brevity response) */}
       <AnimatePresence>
         {isAllDone && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
-            // CLASS PENTING: overflow-visible agar popover bisa keluar
             className="rounded-2xl border bg-muted/30 p-4 sm:p-5 space-y-4 overflow-visible shadow-sm z-20 backdrop-blur-sm relative"
           >
+            {/* ...Toolbar Content (Color, BG, Etc) - Kept Clean... */}
             {/* TOP ROW */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-sm font-bold">
@@ -844,8 +936,8 @@ export function MultipleImagesTab() {
         <LayoutGroup>
           <div className="space-y-4">
             <div className="flex items-center justify-between px-1">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                {files.length} Images in Queue
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <Layers className="size-3" /> {files.length} Images in Queue
               </p>
               {!isProcessing && (
                 <Button
@@ -858,10 +950,10 @@ export function MultipleImagesTab() {
                 </Button>
               )}
             </div>
-            {/* GRID HAS Z-INDEX 0 by default, so Picker Z-50 wins */}
+            {/* GRID RESPONSIF (OPTIMIZED MOBILE) */}
             <motion.div
               layout
-              className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+              className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
             >
               <AnimatePresence mode="popLayout">
                 {files.map((item) => (

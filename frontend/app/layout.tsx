@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner"; // Pastikan import dari sini
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-// OPTIMASI FONT: Gunakan swap agar teks langsung muncul
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -17,30 +16,39 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-// --- SEO METADATA (Disesuaikan dengan Branding Baru) ---
+// --- SEO METADATA FINAL ---
 export const metadata: Metadata = {
-  title: "Radit AI Studio - Magic Eraser & Smart Restorer (Gratis)",
+  // PENTING: Ganti URL ini dengan domain Vercel kamu nanti (misal: https://azura-remove.vercel.app)
+  // Ini mencegah error "metadataBase is missing" saat deploy
+  metadataBase: new URL("https://azura-remove-bg.vercel.app"),
+
+  title: "Azura Remove BG - Hapus Background Otomatis (Gratis & HD)",
   description:
-    "Edit foto online gratis tanpa login. Hapus objek pengganggu, hapus background, dan perjelas foto buram dengan AI. Cepat, Aman, dan Tanpa Watermark.",
+    "Tools AI hapus background, magic eraser, dan video downloader gratis tanpa login. Privasi aman, proses cepat, dan kualitas HD.",
   icons: {
     icon: "/favicon.ico",
   },
   authors: [{ name: "Radithya Development" }],
   keywords: [
-    "magic eraser online",
+    "remove bg",
     "hapus background",
-    "smart restorer",
-    "perjelas foto",
+    "magic eraser",
     "video downloader",
-    "radit ai",
-    "gratis",
+    "azura ai",
+    "edit foto online",
   ],
   openGraph: {
-    title: "Radit AI Studio - Tools Kreatif Gratis",
+    title: "Azura Remove BG - Tools Kreatif Gratis",
     description:
-      "Satu website untuk semua kebutuhan edit foto & video. Tanpa login & watermark.",
+      "Hapus background foto dan edit media dalam hitungan detik. Gratis & Aman.",
     type: "website",
     locale: "id_ID",
+    siteName: "Azura AI Studio",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Azura Remove BG",
+    description: "Edit foto pakai AI, gratis tanpa watermark.",
   },
 };
 
@@ -51,6 +59,7 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1, // Mencegah zoom in tidak sengaja di input form HP
 };
 
 export default function RootLayout({
@@ -70,7 +79,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-          {/* 👇 UPDATE DISINI: position="top-center" */}
+          {/* Posisi Toast di atas tengah agar terlihat jelas di HP */}
           <Toaster position="top-center" richColors closeButton />
         </ThemeProvider>
       </body>

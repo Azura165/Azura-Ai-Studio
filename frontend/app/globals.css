@@ -123,3 +123,45 @@
     @apply bg-background text-foreground;
   }
 }
+/* --- Tambahkan di paling bawah file globals.css --- */
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  min-width: 200%;
+  animation: marquee 20s linear infinite;
+}
+
+/* Biar rapi di mobile */
+@media (max-width: 768px) {
+  .animate-marquee {
+    animation-duration: 15s; /* Lebih cepat di HP */
+  }
+}
+/* --- Tambahkan di bagian bawah globals.css --- */
+
+/* Animasi Gradient Text (Untuk Hero Section) */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% auto;
+  animation: gradient 6s ease infinite;
+}

@@ -15,8 +15,6 @@ import {
   Trash2,
   Instagram,
   Facebook,
-  CheckCircle2,
-  ShieldCheck,
   ArrowRight,
   ExternalLink,
   Sparkles,
@@ -67,7 +65,7 @@ interface HistoryItem {
   source: string;
 }
 
-// --- UTILS (MEMOIZED) ---
+// --- UTILS ---
 const getRelativeTime = (timestamp: number) => {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
   if (seconds < 60) return "Baru saja";
@@ -105,8 +103,6 @@ const sanitizeInput = (input: string) => {
   return input.replace(/[<>'"();]/g, "").trim();
 };
 
-// --- MEMOIZED COMPONENTS (ANTI-LAG) ---
-// Komponen Badge dipisah agar tidak re-render saat state parent berubah
 const BadgeItem = memo(
   ({
     icon: Icon,
@@ -137,7 +133,6 @@ export function VideoDownloader() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [suggestedLink, setSuggestedLink] = useState("");
 
-  // Load History (Hanya sekali saat mount)
   useEffect(() => {
     const saved = localStorage.getItem("radit_dl_history");
     if (saved) setHistory(JSON.parse(saved));
@@ -155,7 +150,7 @@ export function VideoDownloader() {
       }
     };
     checkClipboard();
-  }, []); // Hapus dependency [url] agar tidak spam check clipboard
+  }, []);
 
   const saveToHistory = useCallback((info: VideoInfo, itemUrl: string) => {
     const newItem: HistoryItem = {
@@ -165,7 +160,6 @@ export function VideoDownloader() {
       date: Date.now(),
       source: info.source,
     };
-    // Optimasi: Hanya simpan jika url belum ada di top history
     setHistory((prev) => {
       const newHistory = [
         newItem,
@@ -191,7 +185,6 @@ export function VideoDownloader() {
         setSuggestedLink("");
         if (isValidUrl(cleanText)) {
           toast.success("Link ditempel!");
-          // Jangan auto-fetch untuk memberi user kontrol
         } else {
           toast.error("Link tidak dikenali.");
         }
@@ -202,7 +195,7 @@ export function VideoDownloader() {
   };
 
   const handleGetInfo = async (overrideUrl?: string) => {
-    if (isLoadingInfo) return; // Prevent spam click
+    if (isLoadingInfo) return;
 
     const rawUrl = overrideUrl || url;
     const targetUrl = sanitizeInput(rawUrl);
@@ -219,9 +212,10 @@ export function VideoDownloader() {
     setIsLoadingInfo(true);
     setVideoInfo(null);
     const toastId = toast.loading("Menganalisis video...");
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000";
 
     try {
-      const res = await fetch("http://127.0.0.1:5000/api/video-info", {
+      const res = await fetch(`${apiUrl}/api/video-info`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: targetUrl }),
@@ -242,14 +236,15 @@ export function VideoDownloader() {
   };
 
   const handleDownload = async (formatId: string, ext: string) => {
-    if (!url || isDownloading) return; // Prevent double download
+    if (!url || isDownloading) return;
     setIsDownloading(true);
     const toastId = toast.loading(
       `Memproses ${ext.toUpperCase()} (Tunggu sebentar...)`,
     );
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5000";
 
     try {
-      const res = await fetch("http://127.0.0.1:5000/api/video-download", {
+      const res = await fetch(`${apiUrl}/api/video-download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url, format_id: formatId }),
@@ -285,7 +280,6 @@ export function VideoDownloader() {
     }
   };
 
-  // --- STYLE HELPER: BADGE & ICONS (Optimized logic) ---
   const getQualityStyle = useCallback((res: string, ext: string) => {
     if (res.includes("2160p") || res.includes("4K"))
       return {
@@ -347,12 +341,11 @@ export function VideoDownloader() {
 
   return (
     <div className="relative space-y-10 max-w-5xl mx-auto px-2 min-h-[600px] py-4">
-      {/* HEADER ICONS - STATIC (NO ANIMATION TO REDUCE LOAD) */}
       {!videoInfo && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }} // Faster animation
+          transition={{ duration: 0.3 }}
           className="text-center space-y-8 mb-12"
         >
           <div className="flex justify-center gap-6">
@@ -450,7 +443,6 @@ export function VideoDownloader() {
         </div>
       </div>
 
-      {/* SUGGESTION POPUP */}
       <AnimatePresence>
         {suggestedLink && !url && (
           <motion.div
@@ -476,7 +468,6 @@ export function VideoDownloader() {
         )}
       </AnimatePresence>
 
-      {/* --- RESULT CARD (OPTIMIZED) --- */}
       <AnimatePresence mode="wait">
         {videoInfo ? (
           <motion.div
@@ -484,11 +475,10 @@ export function VideoDownloader() {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.25 }} // Faster transition
+            transition={{ duration: 0.25 }}
             className="rounded-[2rem] border border-border/50 bg-card/90 backdrop-blur-sm overflow-hidden shadow-2xl relative ring-1 ring-black/5"
           >
             <div className="flex flex-col lg:flex-row relative z-10">
-              {/* --- LEFT: THUMBNAIL & INFO --- */}
               <div className="p-6 lg:p-8 lg:w-5/12 flex flex-col gap-6 border-b lg:border-b-0 lg:border-r border-border/50 bg-muted/20">
                 <div className="relative aspect-video rounded-2xl overflow-hidden bg-black shadow-lg group ring-1 ring-black/10">
                   <Image
@@ -497,16 +487,14 @@ export function VideoDownloader() {
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-700"
                     unoptimized
-                    sizes="(max-width: 768px) 100vw, 400px" // Optimization: Resize on demand
+                    sizes="(max-width: 768px) 100vw, 400px"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
 
-                  {/* Duration Badge */}
                   <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-md border border-white/10 flex items-center gap-1.5 shadow-md">
                     <Clock className="size-3" /> {videoInfo.duration}
                   </div>
 
-                  {/* --- FIX: LOGO SOURCE (SOLID & CLEAR) --- */}
                   <div className="absolute top-3 left-3">
                     {(() => {
                       const {
@@ -570,7 +558,6 @@ export function VideoDownloader() {
                     </div>
                   </div>
 
-                  {/* --- FIX: BADGES MEMOIZED --- */}
                   <div className="flex flex-wrap gap-2">
                     <BadgeItem
                       icon={Lock}
@@ -603,7 +590,6 @@ export function VideoDownloader() {
                 </div>
               </div>
 
-              {/* --- RIGHT: FORMAT LIST (OPTIMIZED) --- */}
               <div className="flex-1 p-6 lg:p-8 bg-background">
                 <div className="flex items-center justify-between mb-5">
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
@@ -614,7 +600,6 @@ export function VideoDownloader() {
                   </div>
                 </div>
 
-                {/* LOADING OVERLAY */}
                 <div className="relative min-h-[300px]">
                   {isDownloading && (
                     <div className="absolute inset-0 bg-background/90 backdrop-blur-sm z-20 flex flex-col items-center justify-center text-center animate-in fade-in rounded-2xl border border-indigo-500/20">
@@ -631,7 +616,6 @@ export function VideoDownloader() {
                     </div>
                   )}
 
-                  {/* FORMAT LIST - OPTIMIZED SCROLL & TRANSFORM */}
                   {videoInfo.formats && videoInfo.formats.length > 0 ? (
                     <div
                       className="grid grid-cols-1 gap-3 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar will-change-transform"
@@ -710,7 +694,6 @@ export function VideoDownloader() {
             </div>
           </motion.div>
         ) : (
-          // HISTORY LIST
           history.length > 0 && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -752,7 +735,7 @@ export function VideoDownloader() {
                         fill
                         className="object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
                         unoptimized
-                        sizes="100px" // Optimization
+                        sizes="100px"
                       />
                       <div className="absolute bottom-1 right-1 bg-black/60 p-0.5 rounded-md backdrop-blur-sm">
                         {item.source.includes("youtube") ? (
