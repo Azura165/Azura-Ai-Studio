@@ -22,7 +22,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# BARIS "lib/" SUDAH DIHAPUS SUPAYA FRONTEND AMAN
 lib64/
 parts/
 sdist/
