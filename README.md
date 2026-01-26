@@ -69,10 +69,11 @@ Pastikan Anda sudah menginstall:
 
 ### 1. Clone Repository
 
-````bash
+``bash
 git clone https://github.com/Azura165/Azura-AI-Studio.git
 cd Azura-AI-Studio
-2. Setup Backend (Python)
+
+### 2. Setup Backend (Python)
 Buka terminal baru, masuk ke folder backend:
 
 Bash
