@@ -1,9 +1,8 @@
 # backend/Dockerfile
-FROM python:3.10-slim-bullseye  # <- GUNAKAN BULLSEYE (Debian 11), bukan trixie
+FROM python:3.10-slim-bullseye
 
 # Install system dependencies untuk Debian 11 (Bullseye)
 RUN apt-get update && apt-get install -y \
-    # OpenCV dependencies (debian 11 compatible)
     libgl1 \
     libglib2.0-0 \
     libsm6 \
@@ -13,14 +12,11 @@ RUN apt-get update && apt-get install -y \
     libx11-6 \
     libfontconfig1 \
     libfreetype6 \
-    # Video/audio processing
     ffmpeg \
     libavcodec-extra \
-    # Image libraries
     libpng16-16 \
     libjpeg62-turbo \
     libtiff5 \
-    # Utilities
     wget \
     curl \
     && rm -rf /var/lib/apt/lists/*
