@@ -1,10 +1,10 @@
 # backend/Dockerfile
-FROM python:3.10-slim
+FROM python:3.10-slim-bullseye  # <- GUNAKAN BULLSEYE (Debian 11), bukan trixie
 
-# Install system dependencies
+# Install system dependencies untuk Debian 11 (Bullseye)
 RUN apt-get update && apt-get install -y \
+    # OpenCV dependencies (debian 11 compatible)
     libgl1 \
-    libgl1-mesa-glx \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
@@ -13,13 +13,26 @@ RUN apt-get update && apt-get install -y \
     libx11-6 \
     libfontconfig1 \
     libfreetype6 \
+    # Video/audio processing
+    ffmpeg \
+    libavcodec-extra \
+    # Image libraries
+    libpng16-16 \
+    libjpeg62-turbo \
+    libtiff5 \
+    # Utilities
+    wget \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy requirements first for better caching
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
@@ -27,8 +40,13 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p uploads outputs models
 
+# Set environment variables
+ENV PORT=5000
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
 # Expose port
-EXPOSE 5000
+EXPOSE $PORT
 
 # Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000", "--loop", "asyncio", "--timeout-keep-alive", "120"]
