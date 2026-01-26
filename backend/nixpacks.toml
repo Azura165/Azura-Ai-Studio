@@ -1,22 +1,28 @@
 # backend/nixpacks.toml
 
 [phases.setup]
-# Daftar wajib untuk OpenCV di Linux Server
-nixPkgs = [
-    "python310",
-    "ffmpeg",
-    "glib",
-    "libGL",
-    "xorg.libxcb",
-    "xorg.libX11",
-    "xorg.libXext",
-    "xorg.libXrender",
-    "xorg.libICE",
-    "xorg.libSM"
+# Gunakan aptPkgs (Native Linux) agar file .so pasti terbaca
+aptPkgs = [
+    "libgl1-mesa-glx",
+    "libglib2.0-0",
+    "libsm6",
+    "libxext6",
+    "libxrender1",
+    "libxcb1",
+    "libx11-6"
 ]
 
 [phases.install]
-cmds = ["python -m venv .venv", ". .venv/bin/activate && pip install -r requirements.txt"]
+# Perhatikan bagian cmds ini!
+# Kita install requirements, LALU kita paksa buang opencv biasa dan pasang headless.
+# Ini dilakukan saat BUILD, jadi saat server nyala (Start) sudah bersih.
+cmds = [
+    "python -m venv .venv",
+    ". .venv/bin/activate && pip install -r requirements.txt",
+    ". .venv/bin/activate && pip uninstall -y opencv-python || true",
+    ". .venv/bin/activate && pip install opencv-python-headless==4.9.0.80"
+]
 
 [start]
+# Start command standar (karena pembersihan sudah dilakukan di atas)
 cmd = ". .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port $PORT"
