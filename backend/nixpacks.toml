@@ -1,24 +1,27 @@
 # backend/nixpacks.toml
 
 [phases.setup]
-# Kita install driver Linux yang dicari oleh OpenCV
-# Ini akan menghilangkan error "libxcb.so.1" dan "libGL.so.1"
+# UPDATE: Menambahkan 'libgl1' untuk mengatasi error libGL.so.1
 aptPkgs = [
+    "libgl1",
     "libgl1-mesa-glx",
     "libglib2.0-0",
     "libsm6",
     "libxext6",
-    "libxrender1",
-    "libxcb1",
-    "libx11-6"
+    "libxrender1"
 ]
 
 [phases.install]
+# UPDATE: Strategi "Bersih-bersih"
+# 1. Install semua requirements
+# 2. Paksa UNINSTALL opencv-python (versi monitor) yang bikin crash
+# 3. Pastikan opencv-python-headless (versi server) terpasang
 cmds = [
     "python -m venv .venv",
-    ". .venv/bin/activate && pip install -r requirements.txt"
+    ". .venv/bin/activate && pip install -r requirements.txt",
+    ". .venv/bin/activate && pip uninstall -y opencv-python || true",
+    ". .venv/bin/activate && pip install opencv-python-headless==4.9.0.80"
 ]
 
 [start]
-# Start command standar dan stabil
 cmd = ". .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port $PORT"
