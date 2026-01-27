@@ -1,65 +1,66 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
+import { Outfit } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ScrollToTop } from "@/components/landing/scroll-to-top";
+import { GoogleAnalytics } from "@next/third-parties/google";
+import { Analytics } from "@vercel/analytics/react";
+import { TopBanner } from "@/components/top-banner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-sans" });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-// --- SEO METADATA FINAL ---
-export const metadata: Metadata = {
-  // PENTING: Ganti URL ini dengan domain Vercel kamu nanti (misal: https://azura-remove.vercel.app)
-  // Ini mencegah error "metadataBase is missing" saat deploy
-  metadataBase: new URL("https://azura-remove-bg.vercel.app"),
-
-  title: "Azura Remove BG - Hapus Background Otomatis (Gratis & HD)",
-  description:
-    "Tools AI hapus background, magic eraser, dan video downloader gratis tanpa login. Privasi aman, proses cepat, dan kualitas HD.",
-  icons: {
-    icon: "/favicon.ico",
-  },
-  authors: [{ name: "Radithya Development" }],
-  keywords: [
-    "remove bg",
-    "hapus background",
-    "magic eraser",
-    "video downloader",
-    "azura ai",
-    "edit foto online",
+// --- VIEWPORT OPTIMIZATION ---
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5, // Aksesibilitas: User boleh zoom
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#020817" },
   ],
+};
+
+// --- SEO METADATA ---
+export const metadata: Metadata = {
+  metadataBase: new URL("https://azura-ai-studio.vercel.app"),
+  title: {
+    default: "Azura AI Studio - Edit Foto & Video dengan AI",
+    template: "%s | Azura AI Studio",
+  },
+  description:
+    "Platform AI all-in-one: Hapus background foto otomatis, Magic Eraser, dan Video Downloader tanpa watermark. Gratis dan Cepat.",
+  keywords: [
+    "Azura AI",
+    "Background Remover",
+    "Hapus Background",
+    "Video Downloader",
+    "AI Tools",
+    "Gratis",
+  ],
+  authors: [{ name: "Azura Team", url: "https://github.com/Azura165" }],
+  creator: "Azura Team",
   openGraph: {
-    title: "Azura Remove BG - Tools Kreatif Gratis",
-    description:
-      "Hapus background foto dan edit media dalam hitungan detik. Gratis & Aman.",
     type: "website",
     locale: "id_ID",
+    url: "https://azura-ai-studio.vercel.app",
+    title: "Azura AI Studio",
+    description: "Hapus background & download video dengan AI.",
     siteName: "Azura AI Studio",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Azura Remove BG",
-    description: "Edit foto pakai AI, gratis tanpa watermark.",
+    title: "Azura AI Studio",
+    description: "Edit Foto & Video dengan kekuatan AI.",
+    creator: "@Azura165",
   },
-};
-
-export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-  ],
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1, // Mencegah zoom in tidak sengaja di input form HP
+  verification: {
+    google: "0KfgukOS6CLnaG8QQeK3au5rLfiUVGHX0fq2F7Kfs64",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -68,20 +69,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="en" suppressHydrationWarning className="scroll-smooth">
+      <body className={`${outfit.className} antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          {/* Posisi Toast di atas tengah agar terlihat jelas di HP */}
-          <Toaster position="top-center" richColors closeButton />
+          {/* Wrapper utama dengan relative positioning yang aman */}
+          <div className="relative flex min-h-screen flex-col bg-background text-foreground overflow-x-hidden">
+            {/* TopBanner Global */}
+            <TopBanner />
+
+            {/* Main Content */}
+            <main className="flex-1 w-full relative z-0">{children}</main>
+          </div>
+
+          <Toaster />
+          <ScrollToTop />
         </ThemeProvider>
+
+        {/* Analytics - Non Blocking */}
+        <GoogleAnalytics gaId="G-XYZ123456" />
+        <Analytics />
       </body>
     </html>
   );
